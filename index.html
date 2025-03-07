@@ -706,131 +706,115 @@
             linkElement.click();
         }
         
-        // Function to trigger integration workflow
-        function triggerN8NWorkflow(data, webhookUrl, apiKey = '') {
-            // Get user preference data
-            const userEmail = document.getElementById('userEmail').value.trim();
-            const garmentType = document.getElementById('garmentType').value.trim();
-            const occasion = document.getElementById('occasion').value.trim();
+// Replace the triggerN8NWorkflow function with this improved version
+function triggerN8NWorkflow(data, webhookUrl, apiKey = '') {
+    // Get user preference data
+    const userEmail = document.getElementById('userEmail').value.trim();
+    const garmentType = document.getElementById('garmentType').value.trim();
+    const occasion = document.getElementById('occasion').value.trim();
+    
+    // Validate email
+    if (!userEmail) {
+        alert('Please provide your email address');
+        document.getElementById('userEmail').focus();
+        return;
+    }
+    
+    // Display sending indicator
+    const sendingIndicator = document.createElement('div');
+    sendingIndicator.id = 'sendingIndicator';
+    sendingIndicator.textContent = 'Sending data...';
+    sendingIndicator.style.marginTop = '10px';
+    sendingIndicator.style.padding = '8px';
+    sendingIndicator.style.backgroundColor = '#e8f5e9';
+    sendingIndicator.style.borderRadius = '4px';
+    sendingIndicator.style.textAlign = 'center';
+    
+    // Remove any existing indicator
+    const existingIndicator = document.getElementById('sendingIndicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    document.querySelector('.workflow-settings').appendChild(sendingIndicator);
+    
+    // Create a simpler data object for Make.com
+    // Make.com often works better with flatter, simpler structures
+    const dataToSend = {
+        id: data.id,
+        userEmail: userEmail,
+        garmentType: garmentType,
+        occasion: occasion,
+        timestamp: new Date().toISOString(),
+        bust: data.bust,
+        waist: data.waist,
+        hip: data.hip,
+        shoulder: data.shoulder,
+        inseam: data.inseam,
+        arm_length: data.arm_length,
+        neck_circ: data.neck_circ,
+        bicep: data.bicep
+    };
+    
+    console.log("Sending to Make.com:", webhookUrl);
+    console.log("Data:", dataToSend);
+    
+    // Use a simple fetch without credentials and with mode: 'no-cors'
+    fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+    })
+    .then(response => {
+        console.log("Make.com response status:", response.status);
+        // Make.com typically returns 200 even if there are issues on their end
+        // So we'll consider any 2xx response as success
+        if (response.status >= 200 && response.status < 300) {
+            sendingIndicator.textContent = 'Data sent successfully!';
+            sendingIndicator.style.backgroundColor = '#c8e6c9';
+            return;
+        } else {
+            throw new Error('Server returned status: ' + response.status);
+        }
+    })
+    .catch(error => {
+        console.error("Error details:", error);
+        
+        // Update indicator but with a simpler error message
+        sendingIndicator.textContent = 'Error sending data';
+        sendingIndicator.style.backgroundColor = '#ffcdd2';
+        
+        // Create a backup download option
+        const backupElement = document.createElement('div');
+        backupElement.style.marginTop = '10px';
+        backupElement.style.padding = '8px';
+        backupElement.style.backgroundColor = '#fff8e1';
+        backupElement.style.borderRadius = '4px';
+        backupElement.innerHTML = `
+            <p>Your data has been captured but couldn't be sent automatically.</p>
+            <button id="downloadBackup" style="margin-top: 10px; padding: 8px 16px; background-color: #ffb74d; border: none; border-radius: 4px; cursor: pointer;">
+                Download Data
+            </button>
+        `;
+        
+        sendingIndicator.after(backupElement);
+        
+        // Add download functionality to the backup button
+        document.getElementById('downloadBackup').addEventListener('click', function() {
+            const dataStr = JSON.stringify(dataToSend, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
             
-            // Validate email
-            if (!userEmail) {
-                alert('Please provide your email address');
-                document.getElementById('userEmail').focus();
-                return;
-            }
-            
-            // Display sending indicator
-            const sendingIndicator = document.createElement('div');
-            sendingIndicator.id = 'sendingIndicator';
-            sendingIndicator.textContent = 'Sending data...';
-            sendingIndicator.style.marginTop = '10px';
-            sendingIndicator.style.padding = '8px';
-            sendingIndicator.style.backgroundColor = '#e8f5e9';
-            sendingIndicator.style.borderRadius = '4px';
-            sendingIndicator.style.textAlign = 'center';
-            
-            // Remove any existing indicator
-            const existingIndicator = document.getElementById('sendingIndicator');
-            if (existingIndicator) {
-                existingIndicator.remove();
-            }
-            
-            document.querySelector('.workflow-settings').appendChild(sendingIndicator);
-            
-            // Create a simplified data object - n8n might have issues with complex nested objects
-            const dataToSend = {
-                id: data.id,
-                userEmail: userEmail,
-                garmentType: garmentType,
-                occasion: occasion,
-                timestamp: new Date().toISOString(),
-                measurements: {
-                    bust: data.bust,
-                    waist: data.waist,
-                    hip: data.hip,
-                    shoulder: data.shoulder,
-                    inseam: data.inseam,
-                    arm_length: data.arm_length
-                },
-                allMeasurements: data
-            };
-            
-            console.log("Sending to webhook:", webhookUrl);
-            console.log("Data:", dataToSend);
-            
-            // Try multiple approaches to send data to the webhook
-            
-            // Approach 1: Standard fetch with credentials included
-            fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(dataToSend)
-            })
-            .then(response => {
-                console.log("Fetch response:", response);
-                
-                if (response.ok) {
-                    // Success
-                    sendingIndicator.textContent = 'Data sent successfully!';
-                    sendingIndicator.style.backgroundColor = '#c8e6c9';
-                    return;
-                }
-                
-                // If standard fetch fails, try alternate approaches
-                console.log("Standard fetch failed, trying alternative");
-                
-                // Approach 2: Using XMLHttpRequest as fallback
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', webhookUrl, true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                
-                xhr.onload = function() {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        console.log("XHR Success!");
-                        sendingIndicator.textContent = 'Data sent successfully via alternative method!';
-                        sendingIndicator.style.backgroundColor = '#c8e6c9';
-                    } else {
-                        throw new Error('Both methods failed. Status: ' + xhr.status);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    throw new Error('Network error with alternative method');
-                };
-                
-                xhr.send(JSON.stringify(dataToSend));
-            })
-            .catch(error => {
-                console.error("Error details:", error);
-                
-                // Provide detailed error information and alternatives
-                sendingIndicator.textContent = 'Error sending data';
-                sendingIndicator.style.backgroundColor = '#ffcdd2';
-                
-                const errorElement = document.createElement('div');
-                errorElement.style.marginTop = '10px';
-                errorElement.style.padding = '8px';
-                errorElement.style.backgroundColor = '#ffebee';
-                errorElement.style.borderRadius = '4px';
-                errorElement.style.color = '#d32f2f';
-                errorElement.style.fontSize = '14px';
-                errorElement.innerHTML = `
-                    <p><strong>Error:</strong> ${error.message}</p>
-                    <p>Please try one of these alternatives:</p>
-                    <ul style="margin-left: 20px; margin-top: 5px;">
-                        <li>Use the "Export as JSON" button and manually send the data</li>
-                        <li>Verify the webhook URL configuration in n8n</li>
-                        <li>Check browser console for detailed error information</li>
-                    </ul>
-                `;
-                
-                sendingIndicator.after(errorElement);
-            });
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'measurements.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
         }
     </script>
 </body>
