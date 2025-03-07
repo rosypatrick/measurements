@@ -860,12 +860,13 @@
                 timestamp: new Date().toISOString()
             };
             
-            // Send data to make.com webhook
+            // Send data to make.com webhook with CORS settings
             fetch(webhookUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'omit', // Fix for CORS issue
                 body: JSON.stringify(dataToSend)
             })
             .then(response => {
