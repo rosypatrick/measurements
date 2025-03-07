@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Measurement Capture</title>
+    <!-- Add this meta tag for camera permissions -->
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: mediastream: https://celticsophai.app.n8n.cloud;">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        video, canvas {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+        }
+        canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .measurements {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+        .measurement-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .measurement-row:last-child {
+            border-bottom: none;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .input-row label {
+            flex: 1;
+            min-width: 150px;
+        }
+        .input-row input {
+            flex: 2;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .instructions {
+            background-color: #e8f0fe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+        }
+        .status {
+            font-weight: bold;
+            text-align: center;
+            color: #4285f4;
+            margin: 10px 0;
+            font-size: 18px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+        }
+        .error {
+            color: #ea4335;
+        }
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Body Measurement Capture</h1>
+        
+        <div class="instructions">
+            <h3>Instructions</h3>
+            <p>This app helps you capture body measurements using your camera. Follow these steps:</p>
+            <ol>
+                <li>Allow camera access when prompted</li>
+                <li>Stand 2-3 meters away from the camera</li>
+                <li>Wear fitting clothes for accurate measurements</li>
+                <li>Use the reference object for scale calibration</li>
+                <li>Capture front and side views</li>
+                <li>Review and export your measurements</li>
+            </ol>
+            <p><strong>Note:</strong> If the camera doesn't start, make sure you're using HTTPS and have granted camera permissions.</p>
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="countdown" id="countdown">3</div>
+            <div class="status" id="status">Camera inactive</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startCamera">Start Camera</button>
+            <button id="capturePhoto" disabled>Capture</button>
+            <button id="resetCamera" disabled>Reset</button>
+        </div>
+        
+        <div class="calibration">
+            <h3>Scale Calibration</h3>
+            <p>For accurate measurements, please provide a reference measurement:</p>
+            <div class="input-row">
+                <label for="referenceHeight">Your Height (cm):</label>
+                <input type="number" id="referenceHeight" min="100" max="250" step="0.1" placeholder="Enter your height">
+            </div>
+        </div>
+        
+        <div class="user-preferences" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; background-color: #f9f9f9; margin-bottom: 20px;">
+            <h3>Your Information</h3>
+            <div class="input-row">
+                <label for="userEmail">Email Address:</label>
+                <input type="email" id="userEmail" placeholder="Enter your email address" required>
+            </div>
+            <div class="input-row">
+                <label for="garmentType">Type of Garment:</label>
+                <input type="text" id="garmentType" placeholder="e.g., Shirt, Pants, Dress, Suit">
+            </div>
+            <div class="input-row">
+                <label for="occasion">Occasion:</label>
+                <textarea id="occasion" placeholder="Describe the occasion or how you plan to use this garment" style="flex: 2; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 60px;"></textarea>
+            </div>
+        </div>
+        
+        <div class="measurements">
+            <h3>Measurements</h3>
+            <div id="measurementsList">
+                <div class="measurement-row">
+                    <span>ID:</span>
+                    <span id="id">0010101001010111000</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Is Measured:</span>
+                    <span id="isMeasured">false</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Across Back Shoulder (cm):</span>
+                    <span id="across_back_shoulder">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Ankle (cm):</span>
+                    <span id="ankle">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Arm Length (cm):</span>
+                    <span id="arm_length">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Bust (cm):</span>
+                    <span id="bust">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Calf (cm):</span>
+                    <span id="calf">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Elbow (cm):</span>
+                    <span id="elbow">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Forearm (cm):</span>
+                    <span id="forearm">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>High Hip (cm):</span>
+                    <span id="high_hip">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Hip (cm):</span>
+                    <span id="hip">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Inseam (cm):</span>
+                    <span id="inseam">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Knee (cm):</span>
+                    <span id="knee">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Nape to Waist (cm):</span>
+                    <span id="nape_to_waist">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Neck Base (cm):</span>
+                    <span id="neck_base">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Neck Circumference (cm):</span>
+                    <span id="neck_circ">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Seat (cm):</span>
+                    <span id="seat">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Thigh (cm):</span>
+                    <span id="thigh">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Waist (cm):</span>
+                    <span id="waist">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Wrist (cm):</span>
+                    <span id="wrist">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Bicep (cm):</span>
+                    <span id="bicep">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Head (cm):</span>
+                    <span id="head">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Inseam to Ankle (cm):</span>
+                    <span id="inseam_to_ankle">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Shoulder (cm):</span>
+                    <span id="shoulder">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Torso (cm):</span>
+                    <span id="torso">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Under Bust (cm):</span>
+                    <span id="under_bust">-</span>
+                </div>
+                <div class="measurement-row">
+                    <span>Waist Bellybutton (cm):</span>
+                    <span id="waist_bellybutton">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="export-controls">
+            <button id="exportJSON">Export as JSON</button>
+        <div class="workflow-settings" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+                <h3>Send Measurements</h3>
+                <p>Click the button below to send your measurements and preferences to our system:</p>
+                <div style="margin-top: 15px;">
+                    <button id="triggerWorkflow" style="background-color: #ff6d00;">Send Measurements</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('startCamera');
+        const captureBtn = document.getElementById('capturePhoto');
+        const resetBtn = document.getElementById('resetCamera');
+        const exportBtn = document.getElementById('exportJSON');
+        const statusEl = document.getElementById('status');
+        const heightInput = document.getElementById('referenceHeight');
+        const countdownEl = document.getElementById('countdown');
+        
+        // Global variables
+        let stream = null;
+        let photosTaken = 0;
+        let countdownInterval = null;
+        const measurements = {
+            id: "0010101001010111000",
+            isMeasured: false,
+            across_back_shoulder: null,
+            ankle: null,
+            arm_length: null,
+            bust: null,
+            calf: null,
+            elbow: null,
+            forearm: null,
+            high_hip: null,
+            hip: null,
+            inseam: null,
+            knee: null,
+            nape_to_waist: null,
+            neck_base: null,
+            neck_circ: null,
+            seat: null,
+            thigh: null,
+            waist: null,
+            wrist: null,
+            bicep: null,
+            head: null,
+            inseam_to_ankle: null,
+            shoulder: null,
+            torso: null,
+            under_bust: null,
+            waist_bellybutton: null
+        };
+        
+        // Sample measurements for demo purposes
+        const sampleMeasurements = {
+            across_back_shoulder: "42.724",
+            ankle: "30.252",
+            arm_length: "68.285",
+            bust: "106.019",
+            calf: "44.016",
+            elbow: "29.469",
+            forearm: "27.995",
+            high_hip: "107.856",
+            hip: "114.894",
+            inseam: "90.653",
+            knee: "43.459",
+            nape_to_waist: "58.916",
+            neck_base: "40.103",
+            neck_circ: "38.579",
+            seat: "70.187",
+            thigh: "68.854",
+            waist: "96.957",
+            wrist: "18.306",
+            bicep: "35.085",
+            head: "61.470",
+            inseam_to_ankle: "84.670",
+            shoulder: "19.143",
+            torso: "94.327",
+            under_bust: "104.408",
+            waist_bellybutton: null
+        };
+        
+        // Check if we're in an iframe and if camera access is restricted
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check if we're in an iframe
+            if (window.self !== window.top) {
+                console.log('Running in iframe - this may restrict camera access');
+                
+                // Display warning about iframe restrictions
+                const iframeWarning = document.createElement('div');
+                iframeWarning.style.padding = '10px';
+                iframeWarning.style.backgroundColor = '#fff3e0';
+                iframeWarning.style.border = '1px solid #ffe0b2';
+                iframeWarning.style.borderRadius = '4px';
+                iframeWarning.style.marginBottom = '15px';
+                iframeWarning.innerHTML = `
+                    <p><strong>Camera Access Issue:</strong> This tool is embedded in a frame which may restrict camera access.</p>
+                    <p>Try these solutions:</p>
+                    <ol>
+                        <li>Click <a href="#" id="openInNewTab">this link</a> to open in a new tab</li>
+                        <li>Or ask your WordPress admin to add 'allow="camera"' to the iframe tag</li>
+                    </ol>
+                `;
+                
+                document.querySelector('.container').insertBefore(iframeWarning, document.querySelector('.instructions'));
+                
+                // Create a data URL to open in new tab
+                document.getElementById('openInNewTab').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const htmlContent = document.documentElement.outerHTML;
+                    const blob = new Blob([htmlContent], {type: 'text/html'});
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                });
+            }
+            
+            // Load data from cookies if available
+            loadFromCookies();
+        });
+        
+        // Event listeners
+        startBtn.addEventListener('click', startCamera);
+        captureBtn.addEventListener('click', startCountdown);
+        resetBtn.addEventListener('click', resetCamera);
+        exportBtn.addEventListener('click', exportMeasurements);
+        
+        // Add integration trigger button listener
+        document.getElementById('triggerWorkflow').addEventListener('click', function() {
+            // Use the provided webhook URL
+            const webhookUrl = 'https://celticsophai.app.n8n.cloud/webhook-test/da5eed64-6fc7-49f6-96b6-406372da2fd6';
+            triggerN8NWorkflow(measurements, webhookUrl);
+        });
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                // First, make sure any previous stream is properly stopped
+                if (stream) {
+                    stopCamera();
+                }
+                
+                console.log('Attempting to access camera...');
+                
+                // Check if getUserMedia is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API not available in this browser or context');
+                }
+                
+                // Add more detailed constraints for better browser compatibility
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: false,
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                console.log('Camera access granted:', stream);
+                
+                // Double check that we got a valid stream with tracks
+                if (!stream || !stream.getVideoTracks || !stream.getVideoTracks().length) {
+                    throw new Error('No video tracks found in media stream');
+                }
+                
+                // Assign the stream to video element
+                try {
+                    video.srcObject = stream;
+                } catch (e) {
+                    console.error('Error setting srcObject:', e);
+                    // Fallback for older browsers
+                    try {
+                        video.src = URL.createObjectURL(stream);
+                    } catch (e2) {
+                        console.error('Error with createObjectURL fallback:', e2);
+                        throw new Error('Could not connect camera to video element');
+                    }
+                }
+                
+                statusEl.textContent = 'Camera active - Position yourself in frame';
+                startBtn.disabled = true;
+                captureBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+                // Set canvas dimensions to match video when video is ready
+                video.onloadedmetadata = () => {
+                    console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                };
+                
+                // Add error handling for video element
+                video.onerror = (e) => {
+                    console.error('Video element error:', e);
+                };
+                
+                // Make sure video plays
+                video.play().catch(e => {
+                    console.error('Error playing video:', e);
+                });
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                statusEl.textContent = 'Failed to access camera: ' + err.message;
+                statusEl.classList.add('error');
+                
+                // Show more detailed error information
+                const errorDetails = document.createElement('div');
+                errorDetails.style.marginTop = '10px';
+                errorDetails.style.padding = '8px';
+                errorDetails.style.backgroundColor = '#ffebee';
+                errorDetails.style.borderRadius = '4px';
+                errorDetails.style.fontSize = '14px';
+                
+                if (err.name === 'NotAllowedError') {
+                    errorDetails.innerHTML = '<strong>Permission denied:</strong> Please allow camera access in your browser settings.';
+                } else if (err.name === 'NotFoundError') {
+                    errorDetails.innerHTML = '<strong>No camera found:</strong> Please make sure your device has a working camera.';
+                } else if (err.name === 'NotReadableError') {
+                    errorDetails.innerHTML = '<strong>Camera in use:</strong> Your camera may be used by another application.';
+                } else if (err.name === 'SecurityError') {
+                    errorDetails.innerHTML = '<strong>Security error:</strong> This site needs to be on HTTPS to access the camera.';
+                } else {
+                    errorDetails.innerHTML = '<strong>Error:</strong> ' + err.message;
+                }
+                
+                const existingError = document.querySelector('.camera-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                errorDetails.className = 'camera-error';
+                document.querySelector('.video-container').appendChild(errorDetails);
+            }
+        }
+        
+        // Start countdown before capturing
+        function startCountdown() {
+            if (!stream) return;
+            
+            // Disable all buttons during countdown
+            captureBtn.disabled = true;
+            resetBtn.disabled = true;
+            
+            // Show countdown element and start from 3
+            countdownEl.style.display = 'block';
+            let count = 3;
+            countdownEl.textContent = count;
+            
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.textContent = count;
+                } else {
+                    // Clear the interval and hide countdown
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    countdownEl.style.display = 'none';
+                    
+                    // Take the photo
+                    capturePhoto();
+                }
+            }, 1000);
+        }
+        
+        // Capture photo
+        function capturePhoto() {
+            if (!stream) return;
+            
+            // Fade effect for smooth transition
+            const fadeEffect = document.createElement('div');
+            fadeEffect.style.position = 'absolute';
+            fadeEffect.style.top = '0';
+            fadeEffect.style.left = '0';
+            fadeEffect.style.width = '100%';
+            fadeEffect.style.height = '100%';
+            fadeEffect.style.backgroundColor = 'white';
+            fadeEffect.style.opacity = '0';
+            fadeEffect.style.transition = 'opacity 0.3s';
+            document.querySelector('.video-container').appendChild(fadeEffect);
+            
+            // Trigger the fade-in
+            setTimeout(() => {
+                fadeEffect.style.opacity = '0.3';
+            }, 10);
+            
+            // Camera shutter sound effect (optional)
+            const shutterSound = new Audio('data:audio/mp3;base64,SUQzAwAAAAACNVRTU0UAAAAPAAADTGF2ZjU4LjEzLjEwMAAAAAAAAAAAAAAA//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAGAAAJrgCFhYWFhYWFhYWFhYWFhYWFhYWFsrKysrKysrKysrKysrKysrKysrLT09PT09PT09PT09PT09PT09PT0+np6enp6enp6enp6enp6enp6enp//////////////////////////8AAAAATGF2YzU4LjE4AAAAAAAAAAAAAAAAJANAAAAAAAAACarPHDrdAAAA//uwxAAABMQpVlRMQAJZK6/PWIiAQABnMGqrIIUdW5TnoZ2bYigptO4uHzrZ1LHdS035VZ+P6/cvf1PV9Htnn8oAAP6fxMZoGYb2BgYGBgAACwJL5GOQDkaEqBAKAgsBqHupQ6X/7sHIzMf/T+D/+7ByM30P+D//T+D/+7ByM/Lgz/ugZ1///6BnV7//+gZ///+gZ1f//8qBnX///yoGdX///KgZ1///yoGdT///IOdT///IOdT///KgZ1f//+VB//vAxEkAHG3ZQRmsgAXPuyfDrRAE5///yoGdX///KgZ1f//8qBnX1//9AzoGX//0DOr///0DOr///0DOr///0DOp///INf//+Qa///7gzqf//+Qa///+Qa///+Qa///+Qa//0+gZ1f/9AZ//oGdX//Kj//0DOr//+gZ1f//pUDOr//+lQM6v///jn//0DOr///JnX///GVAzq///+Qa///+Qa//9PoGdX//Kj//0DOr//+gZ1f//0qBnV///yoGdX///KgZ//9Azq///0DL//6BnV///SoGdX//0qBnV//9KgZ1f//8qBl//9Az//+gZ1f//0qBnV///KgZ//9AZ//+gZ1f//0qBnV///GdAzqf//4zqBnU///8g1///yDX//0+gZ1f//Kj//0DOp///IN////IOdT///yDX//+/+gZ//9Az//+gZ1f//0qBnV///KgZ1f//8qBnV///in//+gZ1f//8U///0DOr//+gZ1f//0qBnV//9KgZ1f//8qBnV///yoGdX///Jn//9Azq///5M///0DOr///oGdA3q///+Qa///+Qa//9PoGdX//yoGdX//0qf/9Az//+gZ1f//0qBnV///SoGdXLgZ////SoGdX///KgZ1f//8qBnV///yoGcf//KgZ1f//8qBn//9AzqBnV///yoGdX///KgZ1f//8qBnV///yoGdX///Kn//9Az//+gZ1fQM6v//0DL//6BnV///KgZ1f//8qBnV///yoGcIGdX///Kn///JnX///K//+gZ1f//0qBnV///SoGdX//9KgZ1fQM6n///jf//9Azq///439Azq///oGdT///IOdT///IOdT///IOdX///IN///yDX//0DOoGdX///yoGdX///KgZ1AzqBnV///yoGdX///KgZ1f//8qBnV9Azq///oGdQM6vQM6v//0DOr6BnV///SoGdX///SoGdX///SoGf//0DOr6BnV///yZ//9Azq///kz//+gZ1f//pUDOr///kz///5M///0DOr///kzqBnV///yoGdX///KgZ//9Azq+gZ1AzqBnV///SoGdX//9KgZ1f//8mf//0DOr///kzr//0DOr///5M///0DOr///lQM6v//+TP///kz///5M///0DOr///kzq+gZ1f//pUDOr///lQM6v//+NPoGdX//0qBnV//9KgZ1f//pUDOr6BnV9Azq+gZ//+gZ1fQM6voGdX//9KgZ1f//pUDOr6/P0DOr//+TNAzoGdXoGdX//9KgZ1f//pUDP7//0qBnV///SoGdX//9KgZ1f//8n//+gZ1f//yf///JnX//r/Jn//+v8n//+v8mf/+v8mf/+v8mf/+v8mf/+v8n//+v8n/36/yfQM6///J9Azq///J/QM6v//+T+gZ1f//0n9Azq+v/J/QM6v//+T+gZ1f/r/J/QM6vr/yfQM6vr/J9Azq+v8n//+v8n//+v8n//+v8n0DOr//+T6BnV//r/J9Azq///J/QM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J9Azq+v/J9Azq+v/J/QM6v//+T6/8n//+v8n9Azq+v/J/QM6v//+T+gZ1f/r/J9Azq+v/J/QM6v//+T6BnV9f+T6BnV//r/J/QM6v//+T+gZ1fX/k/oGdX//9J/QM6v//+T+gZ1fX/k/oGdX1/5P6BnV9f+T6BnV//r/J9Azq+v/J9Azq+v/J/QM6v//+T+gZ1fX/k/oGdX//9J/QM6vr/yfQM6v//+T6BnV9f+T+gZ1f//0n9Azq+v/J/QM6v//+T+gZ1fX/k/oGdX//9J/QM6vr/yfQM6vr/yfQM6vr/yfQM6vr/yfQM6vr/yfQM6vr/yf//6/yfQM6vr/yf//6/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J/QM6vr/yfQM6vr/yfQM6vr/yf//6/yfQM6vr/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J/QM6vr/yf//6/yf//6/yf//6/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J/QM6vr/yf//6/yf//6/yf//6/yf//6/yfQM6v//+T6BnV9f+T+gZ1f//0n0DOr6/8n9Azq+v/J/QM6vr/yf//6/yf//6/yf//6/yf//6/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J/QM6vr/yfQM6vr/yfQM6vr/yf//6/yfQM6vr/yf//6/yf//6/yf//6/yf//6/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J/QM6vr/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdX//9J9Azq+v/J/QM6vr/yf//6/yf//6/yfQM6v//+T+gZ1fX/k/oGdXzIzkAyaLbAYGdHYGfB4B+gYwwMD/P///9Z');
+            
+            setTimeout(() => {
+                // Play sound
+                try {
+                    shutterSound.play().catch(e => {
+                        // Ignore any autoplay restrictions
+                        console.log("Sound couldn't play automatically");
+                    });
+                } catch(e) {
+                    // Ignore errors
+                }
+                
+                // Take the actual photo
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0);
+                canvas.style.display = 'block';
+                video.style.display = 'none';
+                
+                // Remove fade effect
+                fadeEffect.remove();
+                
+                photosTaken++;
+                statusEl.textContent = `Photo ${photosTaken} captured - Analyzing body measurements...`;
+                
+                // Disable all controls during processing
+                captureBtn.disabled = true;
+                resetBtn.disabled = true;
+                
+                // Add visual indication of processing
+                const processingIndicator = document.createElement('div');
+                processingIndicator.id = 'processingIndicator';
+                processingIndicator.style.position = 'absolute';
+                processingIndicator.style.top = '20px';
+                processingIndicator.style.left = '50%';
+                processingIndicator.style.transform = 'translateX(-50%)';
+                processingIndicator.style.padding = '10px 20px';
+                processingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                processingIndicator.style.color = 'white';
+                processingIndicator.style.borderRadius = '20px';
+                processingIndicator.style.fontSize = '14px';
+                processingIndicator.innerHTML = 'Analyzing body proportions...';
+                document.querySelector('.video-container').appendChild(processingIndicator);
+                
+                // Start processing with a relaxed timing
+                processPhoto(photosTaken);
+            }, 500);
+        }
+        
+        // Process the captured photo (simulation)
+        function processPhoto(photoNum) {
+            // In a real implementation, this would use computer vision to extract measurements
+            // For this demo, we'll just use the sample data
+            
+            const referenceHeight = parseFloat(heightInput.value) || 170;
+            
+            // Create a confirm button that will appear after processing
+            const createConfirmButton = () => {
+                const confirmBtn = document.createElement('button');
+                confirmBtn.id = 'confirmPhoto';
+                confirmBtn.textContent = 'Continue';
+                confirmBtn.style.position = 'absolute';
+                confirmBtn.style.bottom = '50px';
+                confirmBtn.style.left = '50%';
+                confirmBtn.style.transform = 'translateX(-50%)';
+                confirmBtn.style.padding = '12px 24px';
+                confirmBtn.style.backgroundColor = '#4CAF50';
+                confirmBtn.style.color = 'white';
+                confirmBtn.style.border = 'none';
+                confirmBtn.style.borderRadius = '4px';
+                confirmBtn.style.fontSize = '16px';
+                confirmBtn.style.cursor = 'pointer';
+                
+                // Add hover effect
+                confirmBtn.onmouseover = () => {
+                    confirmBtn.style.backgroundColor = '#45a049';
+                };
+                confirmBtn.onmouseout = () => {
+                    confirmBtn.style.backgroundColor = '#4CAF50';
+                };
+                
+                return confirmBtn;
+            };
+            
+            // Simulate a more realistic processing time (3 seconds)
+            setTimeout(() => {
+                if (photoNum === 1) {
+                    // Process front view measurements
+                    updateMeasurements({
+                        bust: sampleMeasurements.bust,
+                        waist: sampleMeasurements.waist,
+                        hip: sampleMeasurements.hip,
+                        shoulder: sampleMeasurements.shoulder,
+                        neck_circ: sampleMeasurements.neck_circ,
+                        bicep: sampleMeasurements.bicep,
+                        high_hip: sampleMeasurements.high_hip
+                    });
+                    
+                    statusEl.textContent = 'Front view captured. Review your pose and continue when ready.';
+                    
+                    // Add confirm button to the video container
+                    const confirmBtn = createConfirmButton();
+                    document.querySelector('.video-container').appendChild(confirmBtn);
+                    
+                    confirmBtn.addEventListener('click', () => {
+                        // Remove the confirm button
+                        confirmBtn.remove();
+                        
+                        // Reset to camera view for the next photo
+                        resetCamera();
+                        statusEl.textContent = 'Please turn to your side for the next photo';
+                    });
+                    
+                } else if (photoNum === 2) {
+                    // Process all remaining measurements
+                    updateMeasurements({
+                        ...sampleMeasurements,
+                        isMeasured: true
+                    });
+                    
+                    statusEl.textContent = 'Side view captured. Processing complete.';
+                    
+                    // Add final confirm button
+                    const confirmBtn = createConfirmButton();
+                    confirmBtn.textContent = 'View Final Results';
+                    document.querySelector('.video-container').appendChild(confirmBtn);
+                    
+                    confirmBtn.addEventListener('click', () => {
+                        // Remove the confirm button
+                        confirmBtn.remove();
+                        
+                        // Stop the camera and show final results
+                        stopCamera();
+                        
+                        // Hide video element to avoid the "frozen" appearance
+                        video.style.display = 'none';
+                        canvas.style.display = 'none';
+                        
+                        // Create a completion message in place of the video
+                        const completionMessage = document.createElement('div');
+                        completionMessage.style.width = '100%';
+                        completionMessage.style.height = '300px';
+                        completionMessage.style.display = 'flex';
+                        completionMessage.style.alignItems = 'center';
+                        completionMessage.style.justifyContent = 'center';
+                        completionMessage.style.backgroundColor = '#f5f5f5';
+                        completionMessage.style.borderRadius = '8px';
+                        completionMessage.style.flexDirection = 'column';
+                        completionMessage.style.gap = '20px';
+                        completionMessage.style.padding = '20px';
+                        
+                        const checkmark = document.createElement('div');
+                        checkmark.innerHTML = '✓';
+                        checkmark.style.fontSize = '72px';
+                        checkmark.style.color = '#4CAF50';
+                        
+                        const message = document.createElement('div');
+                        message.textContent = 'All measurements complete!';
+                        message.style.fontSize = '24px';
+                        message.style.fontWeight = 'bold';
+                        
+                        completionMessage.appendChild(checkmark);
+                        completionMessage.appendChild(message);
+                        
+                        // Replace the video container contents
+                        const videoContainer = document.querySelector('.video-container');
+                        videoContainer.innerHTML = ''; // Clear existing content
+                        videoContainer.appendChild(completionMessage);
+                        
+                        resetBtn.disabled = true;
+                        captureBtn.disabled = true;
+                        
+                        // Scroll to measurements section
+                        document.querySelector('.measurements').scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    });
+                }
+            }, 3000); // Longer processing time for a more relaxed experience
+        }
+        
+        // Update measurements display
+        function updateMeasurements(newMeasurements) {
+            Object.assign(measurements, newMeasurements);
+            
+            // Update UI
+            for (const key in measurements) {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.textContent = measurements[key] !== null ? measurements[key] : '-';
+                }
+            }
+        }
+        
+        // Reset camera view
+        function resetCamera() {
+            // Cancel any ongoing countdown
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                countdownEl.style.display = 'none';
+            }
+            
+            // Switch back to camera view if showing canvas
+            if (canvas.style.display === 'block') {
+                video.style.display = 'block';
+                canvas.style.display = 'none';
+                statusEl.textContent = 'Camera active - Position yourself in frame';
+                captureBtn.disabled = false;
+            }
+        }
+        
+        // Properly stop the camera stream
+        function stopCamera() {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                stream = null;
+                video.srcObject = null;
+            }
+            
+            // Reset buttons
+            startBtn.disabled = false;
+            captureBtn.disabled = true;
+            resetBtn.disabled = true;
+            
+            statusEl.textContent = 'Camera inactive';
+        }
+        
+        // Export measurements as JSON and trigger N8N workflow
+        function exportMeasurements() {
+            const dataStr = JSON.stringify(measurements, null, 4);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'body_measurements.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            // Trigger N8N workflow with the measurement data
+            triggerN8NWorkflow(measurements);
+        }
+        
+        // Function to trigger integration workflow
+        function triggerN8NWorkflow(data, webhookUrl, apiKey = '') {
+            // Get user preference data
+            const userEmail = document.getElementById('userEmail').value.trim();
+            const garmentType = document.getElementById('garmentType').value.trim();
+            const occasion = document.getElementById('occasion').value.trim();
+            
+            // Validate email
+            if (!userEmail) {
+                alert('Please provide your email address');
+                document.getElementById('userEmail').focus();
+                return;
+            }
+            
+            // Save user data to cookies
+            saveUserDataToCookies(userEmail, garmentType, occasion);
+            
+            // Display sending indicator
+            const sendingIndicator = document.createElement('div');
+            sendingIndicator.id = 'sendingIndicator';
+            sendingIndicator.textContent = 'Sending data...';
+            sendingIndicator.style.marginTop = '10px';
+            sendingIndicator.style.padding = '8px';
+            sendingIndicator.style.backgroundColor = '#e8f5e9';
+            sendingIndicator.style.borderRadius = '4px';
+            sendingIndicator.style.textAlign = 'center';
+            
+            // Remove any existing indicator
+            const existingIndicator = document.getElementById('sendingIndicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            document.querySelector('.workflow-settings').appendChild(sendingIndicator);
+            
+            // Add user preferences and timestamp to the data
+            const dataToSend = {
+                ...data,
+                userEmail: userEmail,
+                garmentType: garmentType,
+                occasion: occasion,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Send data to webhook
+            fetch(webhookUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Success
+                    sendingIndicator.textContent = 'Data sent successfully!';
+                    sendingIndicator.style.backgroundColor = '#c8e6c9';
+                    
+                    // Save measurements to cookies
+                    saveMeasurementsToCookies(data);
+                } else {
+                    // Server error
+                    throw new Error('Server returned status: ' + response.status);
+                }
+            })
+            .catch(error => {
+                // Error
+                sendingIndicator.textContent = 'Error sending data!';
+                sendingIndicator.style.backgroundColor = '#ffcdd2';
+                
+                // Display error details
+                const errorElement = document.createElement('div');
+                errorElement.style.marginTop = '10px';
+                errorElement.style.padding = '8px';
+                errorElement.style.backgroundColor = '#ffebee';
+                errorElement.style.borderRadius = '4px';
+                errorElement.style.color = '#d32f2f';
+                errorElement.style.fontSize = '14px';
+                errorElement.textContent = 'Error: ' + error.message;
+                
+                sendingIndicator.after(errorElement);
+                
+                console.error('Error sending data:', error);
+            });
+        }
+        
+        // Save user data to cookies
+        function saveUserDataToCookies(email, garmentType, occasion) {
+            const expiryDate = new Date();
+            expiryDate.setMonth(expiryDate.getMonth() + 3); // 3 months expiry
+            
+            document.cookie = `userEmail=${encodeURIComponent(email)}; expires=${expiryDate.toUTCString()}; path=/`;
+            
+            if (garmentType) {
+                document.cookie = `garmentType=${encodeURIComponent(garmentType)}; expires=${expiryDate.toUTCString()}; path=/`;
+            }
+            
+            if (occasion) {
+                document.cookie = `occasion=${encodeURIComponent(occasion)}; expires=${expiryDate.toUTCString()}; path=/`;
+            }
+            
+            console.log('User data saved to cookies');
+        }
+        
+        // Save measurements to cookies
+        function saveMeasurementsToCookies(data) {
+            // Only save the main measurements
+            const mainMeasurements = {
+                bust: data.bust,
+                waist: data.waist,
+                hip: data.hip,
+                inseam: data.inseam,
+                shoulder: data.shoulder,
+                arm_length: data.arm_length,
+                id: data.id,
+                isMeasured: data.isMeasured
+            };
+            
+            const expiryDate = new Date();
+            expiryDate.setMonth(expiryDate.getMonth() + 3); // 3 months expiry
+            
+            document.cookie = `measurements=${encodeURIComponent(JSON.stringify(mainMeasurements))}; expires=${expiryDate.toUTCString()}; path=/`;
+            
+            console.log('Measurements saved to cookies');
+        }
+        
+        // Load data from cookies
+        function loadFromCookies() {
+            // Helper function to get cookie value
+            function getCookie(name) {
+                const nameEQ = name + "=";
+                const ca = document.cookie.split(';');
+                for(let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+                }
+                return null;
+            }
+            
+            // Load user data
+            const userEmail = getCookie('userEmail');
+            if (userEmail) {
+                document.getElementById('userEmail').value = userEmail;
+            }
+            
+            const garmentType = getCookie('garmentType');
+            if (garmentType) {
+                document.getElementById('garmentType').value = garmentType;
+            }
+            
+            const occasion = getCookie('occasion');
+            if (occasion) {
+                document.getElementById('occasion').value = occasion;
+            }
+            
+            // Load measurements
+            const measurementsCookie = getCookie('measurements');
+            if (measurementsCookie) {
+                try {
+                    const savedMeasurements = JSON.parse(measurementsCookie);
+                    if (savedMeasurements && typeof savedMeasurements === 'object') {
+                        // Apply saved measurements to current measurements
+                        Object.assign(measurements, savedMeasurements);
+                        
+                        // Update UI with loaded measurements
+                        for (const key in savedMeasurements) {
+                            const el = document.getElementById(key);
+                            if (el && savedMeasurements[key] !== null) {
+                                el.textContent = savedMeasurements[key];
+                            }
+                        }
+                        
+                        console.log('Measurements loaded from cookies');
+                    }
+                } catch (e) {
+                    console.error('Error parsing measurements cookie:', e);
+                }
+            }
+        }
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', stopCamera);
+    </script>
+</body>
+</html>
