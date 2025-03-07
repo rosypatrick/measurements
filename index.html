@@ -10,7 +10,6 @@
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            color: #333;
         }
         .container {
             display: flex;
@@ -22,14 +21,11 @@
             width: 100%;
             max-width: 640px;
             margin: 0 auto;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
         }
         video, canvas {
             width: 100%;
             background-color: #f0f0f0;
-            border-radius: 12px;
+            border-radius: 8px;
         }
         canvas {
             display: none;
@@ -41,43 +37,35 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin: 15px 0;
+            margin: 10px 0;
         }
         button {
-            padding: 12px 20px;
-            background-color: #e94caf;
+            padding: 10px 15px;
+            background-color: #4285f4;
             color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 4px;
             cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s, transform 0.2s;
-            box-shadow: 0 3px 6px rgba(233, 76, 175, 0.3);
         }
         button:hover {
-            background-color: #d43c9a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(233, 76, 175, 0.4);
+            background-color: #3367d6;
         }
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
         }
         .measurements {
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
         }
         .measurement-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
         }
         .measurement-row:last-child {
             border-bottom: none;
@@ -85,54 +73,35 @@
         .input-row {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .input-row label {
             flex: 1;
             min-width: 150px;
-            font-weight: 500;
-            color: #666;
         }
         .input-row input, .input-row textarea {
             flex: 2;
-            padding: 12px;
+            padding: 8px;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            transition: border 0.3s;
-        }
-        .input-row input:focus, .input-row textarea:focus {
-            border-color: #e94caf;
-            outline: none;
+            border-radius: 4px;
         }
         .instructions {
-            background: linear-gradient(135deg, #e94caf 0%, #9b4cff 100%);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            color: white;
-            box-shadow: 0 6px 15px rgba(233, 76, 175, 0.2);
+            background-color: #e8f0fe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
         .instructions h3 {
             margin-top: 0;
-            font-size: 22px;
         }
         .status {
             font-weight: bold;
             text-align: center;
-            color: white;
+            color: #4285f4;
             margin: 10px 0;
-            padding: 8px 15px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50px;
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
         }
         .error {
-            color: #ff4d4d;
-            background-color: rgba(255, 255, 255, 0.9);
+            color: #ea4335;
         }
         .countdown {
             position: absolute;
@@ -143,68 +112,11 @@
             color: white;
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
             display: none;
-            z-index: 15;
-        }
-        h1, h3 {
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 30px;
-            color: #e94caf;
-        }
-        .sizible-header {
-            text-align: center;
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #e94caf 0%, #9b4cff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-fill-color: transparent;
-        }
-        .calibration, .user-preferences {
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        .silhouette {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            height: 80%;
-            opacity: 0.3;
-            z-index: 5;
-            display: none;
-        }
-        .export-controls button {
-            background-color: #9b4cff;
-        }
-        .export-controls button:hover {
-            background-color: #8540e6;
-        }
-        #triggerWorkflow {
-            background-color: #ff4c91;
-        }
-        #triggerWorkflow:hover {
-            background-color: #e8357c;
-        }
-        .workflow-settings {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="sizible-header">Better fitting the Sizible way</div>
         <h1>Body Measurement Capture</h1>
         
         <div class="instructions">
@@ -213,7 +125,7 @@
             <ol>
                 <li>Allow camera access when prompted</li>
                 <li>Stand 2-3 meters away from the camera</li>
-                <li>Position yourself within the silhouette outline</li>
+                <li>Wear fitting clothes for accurate measurements</li>
                 <li>Use the reference object for scale calibration</li>
                 <li>Capture front and side views</li>
                 <li>Review and export your measurements</li>
@@ -223,8 +135,6 @@
         <div class="video-container">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas"></canvas>
-            <img id="silhouetteFront" class="silhouette" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDIwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCA1MGMxMi41IDAgMjEuNSA3LjUgMjUgMTBDMTI4LjUgNjMuNSAxMzAgNzAgMTMwIDgwYzAgMTAtMS41IDI1LTQgMzBzLTEgMTUtMSAyMGMwIDUgMiAxNSAyIDE1czQgMTEwIDQgMTIwLTEgNDUtMSA1MFYzNzBjLTQgMzAtNyA0MC0xNSA2MHMtMTAgMzAtMTUgMzVsLTIgNWMwIDcuNS0xLjUgMTUtNiAyMGgtMThjLTQuNS01LTYtMTIuNS02LTIwbC0yLTVjLTUtNS0xMC0xNS0xNS0zNXMtMTEtMzAtMTUtNjB2LTU1YzAtNS0xLTQwLTEtNTBzNC0xMjAgNC0xMjBzMi0xMCAyLTE1YzAtNSAxLjUtMTUtMS0yMHMtNC0yMC00LTMwYzAtMTAgMS41LTE2LjUgNS0yMGMzLjUtMi41IDEyLjUtMTAgMjUtMTB6IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiLz48L3N2Zz4=" alt="Front Silhouette" />
-            <img id="silhouetteSide" class="silhouette" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDIwMCA1MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCA1MGM4IDAgMTIgNSAxNSA4IDMgMyA1IDcgNSAxN3Y1YzAgMTAtMiAyNS01IDMwLTIgMy41LTMgMTAtMyAxNSAwIDUgMSA1IDIgMTAgNiAyMCA4IDMwIDEwIDQwIDYgMzAgNyA2MCAxMCA4MCAzIDIwIDUgMzAgNSA1MHY0MGwtMSAxNS0yIDIwYy0yIDEwLTMgMTUtNyAyNWwtOCAyNGMtMiA2LTggNi0xMCA2SDg3Yy0yIDAtNC0xLTQtNXYtNWMtMi01LTUtMTAtNS0xNnYtNTlsLTMtNjAtNS05MGMtMS0xMC0yLTIwLTQtMjUtMyAxNS01IDQwLTYgNjAtMyA2MC0yIDkwLTIgMTAwdjQwbC0xIDE1djI0YzAgNi0yIDctNiA3SDM2Yy00IDAtNi00LTYtMTB2LTEwYzAtNSA0LTEwIDUtMTUgMS01IDEtMTAgMS0xNXYtNzVjMC0xMC0xLTQwLTEtNjAtMS0yMC02LTU1LTYtODAgMC0xMCA0LTQ1IDQtNDUgMi01IDUtMTAgNS0xNSAwLTUgMS0yMCAxLTI1VjY1YzAtNS0zLTYgMi04IDQtMiA2LTIgMTQtMnMyMC01IDQ1LTV6IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiLz48L3N2Zz4=" alt="Side Silhouette" />
             <div class="countdown" id="countdown">3</div>
             <div class="status" id="status">Camera inactive</div>
         </div>
@@ -244,7 +154,7 @@
             </div>
         </div>
         
-        <div class="user-preferences">
+        <div class="user-preferences" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; background-color: #f9f9f9; margin-bottom: 20px;">
             <h3>Your Information</h3>
             <div class="input-row">
                 <label for="userEmail">Email Address:</label>
@@ -504,9 +414,6 @@
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                 };
-                
-                // Show front silhouette
-                document.getElementById('silhouetteFront').style.display = 'block';
             } catch (err) {
                 console.error('Error accessing camera:', err);
                 statusEl.textContent = 'Failed to access camera: ' + err.message;
@@ -621,131 +528,15 @@
                 confirmBtn.style.backgroundColor = '#4CAF50';
                 confirmBtn.style.color = 'white';
                 confirmBtn.style.border = 'none';
-                confirmBtn.style.borderRadius = '50px';
+                confirmBtn.style.borderRadius = '4px';
                 confirmBtn.style.fontSize = '16px';
                 confirmBtn.style.cursor = 'pointer';
-                confirmBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
                 
                 // Add hover effect
                 confirmBtn.onmouseover = () => {
                     confirmBtn.style.backgroundColor = '#45a049';
                 };
                 confirmBtn.onmouseout = () => {
-                    confirmBtn.style.backgroundColor = '#4CAF50';
-                };
-                
-                return confirmBtn;
-            };
-            
-            // Simulate a more realistic processing time (3 seconds)
-            setTimeout(() => {
-                // Remove processing indicator
-                const processingIndicator = document.getElementById('processingIndicator');
-                if (processingIndicator) processingIndicator.remove();
-                
-                if (photoNum === 1) {
-                    // Process front view measurements
-                    updateMeasurements({
-                        bust: sampleMeasurements.bust,
-                        waist: sampleMeasurements.waist,
-                        hip: sampleMeasurements.hip,
-                        shoulder: sampleMeasurements.shoulder,
-                        neck_circ: sampleMeasurements.neck_circ,
-                        bicep: sampleMeasurements.bicep,
-                        high_hip: sampleMeasurements.high_hip
-                    });
-                    
-                    statusEl.textContent = 'Front view captured. Review your pose and continue when ready.';
-                    
-                    // Add confirm button to the video container
-                    const confirmBtn = createConfirmButton();
-                    document.querySelector('.video-container').appendChild(confirmBtn);
-                    
-                    confirmBtn.addEventListener('click', () => {
-                        // Remove the confirm button
-                        confirmBtn.remove();
-                        
-                        // Reset to camera view for the next photo
-                        resetCamera();
-                        
-                        // Hide front silhouette and show side silhouette for the next photo
-                        document.getElementById('silhouetteFront').style.display = 'none';
-                        document.getElementById('silhouetteSide').style.display = 'block';
-                        
-                        statusEl.textContent = 'Please turn to your side for the next photo';
-                    });
-                    
-                } else if (photoNum === 2) {
-                    // Process all remaining measurements
-                    updateMeasurements({
-                        ...sampleMeasurements,
-                        isMeasured: true
-                    });
-                    
-                    statusEl.textContent = 'Side view captured. Processing complete.';
-                    
-                    // Add final confirm button
-                    const confirmBtn = createConfirmButton();
-                    confirmBtn.textContent = 'View Final Results';
-                    document.querySelector('.video-container').appendChild(confirmBtn);
-                    
-                    confirmBtn.addEventListener('click', () => {
-                        // Remove the confirm button
-                        confirmBtn.remove();
-                        
-                        // Stop the camera and show final results
-                        stopCamera();
-                        
-                        // Hide video element to avoid the "frozen" appearance
-                        video.style.display = 'none';
-                        canvas.style.display = 'none';
-                        document.getElementById('silhouetteSide').style.display = 'none';
-                        
-                        // Create a completion message in place of the video
-                        const completionMessage = document.createElement('div');
-                        completionMessage.style.width = '100%';
-                        completionMessage.style.height = '300px';
-                        completionMessage.style.display = 'flex';
-                        completionMessage.style.alignItems = 'center';
-                        completionMessage.style.justifyContent = 'center';
-                        completionMessage.style.backgroundColor = '#f5f5f5';
-                        completionMessage.style.borderRadius = '12px';
-                        completionMessage.style.flexDirection = 'column';
-                        completionMessage.style.gap = '20px';
-                        completionMessage.style.padding = '20px';
-                        completionMessage.style.background = 'linear-gradient(135deg, #e94caf30 0%, #9b4cff30 100%)';
-                        
-                        const checkmark = document.createElement('div');
-                        checkmark.innerHTML = '✓';
-                        checkmark.style.fontSize = '72px';
-                        checkmark.style.color = '#e94caf';
-                        
-                        const message = document.createElement('div');
-                        message.textContent = 'All measurements complete!';
-                        message.style.fontSize = '24px';
-                        message.style.fontWeight = 'bold';
-                        message.style.color = '#333';
-                        
-                        completionMessage.appendChild(checkmark);
-                        completionMessage.appendChild(message);
-                        
-                        // Replace the video container contents
-                        const videoContainer = document.querySelector('.video-container');
-                        videoContainer.innerHTML = ''; // Clear existing content
-                        videoContainer.appendChild(completionMessage);
-                        
-                        resetBtn.disabled = true;
-                        captureBtn.disabled = true;
-                        
-                        // Scroll to measurements section
-                        document.querySelector('.measurements').scrollIntoView({ 
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    });
-                }
-            }, 3000); // Longer processing time for a more relaxed experience
-        }out = () => {
                     confirmBtn.style.backgroundColor = '#4CAF50';
                 };
                 
