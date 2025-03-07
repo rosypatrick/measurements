@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Body Measurement Capture</title>
-    <!-- Add this meta tag for camera permissions -->
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob: mediastream: https://hook.eu2.make.com/3g4m77jfkblizk9b41dv2bsjhv9d6us7;">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -81,7 +79,7 @@
             flex: 1;
             min-width: 150px;
         }
-        .input-row input {
+        .input-row input, .input-row textarea {
             flex: 2;
             padding: 8px;
             border: 1px solid #ddd;
@@ -101,15 +99,6 @@
             text-align: center;
             color: #4285f4;
             margin: 10px 0;
-            font-size: 18px;
-            padding: 10px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border-radius: 4px;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80%;
         }
         .error {
             color: #ea4335;
@@ -141,7 +130,6 @@
                 <li>Capture front and side views</li>
                 <li>Review and export your measurements</li>
             </ol>
-            <p><strong>Note:</strong> If the camera doesn't start, make sure you're using HTTPS and have granted camera permissions.</p>
         </div>
         
         <div class="video-container">
@@ -178,7 +166,7 @@
             </div>
             <div class="input-row">
                 <label for="occasion">Occasion:</label>
-                <textarea id="occasion" placeholder="Describe the occasion or how you plan to use this garment" style="flex: 2; padding: 8px; border: 1px solid #ddd; border-radius: 4px; min-height: 60px;"></textarea>
+                <textarea id="occasion" placeholder="Describe the occasion or how you plan to use this garment" style="min-height: 60px;"></textarea>
             </div>
         </div>
         
@@ -298,7 +286,7 @@
         
         <div class="export-controls">
             <button id="exportJSON">Export as JSON</button>
-        <div class="workflow-settings" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+            <div class="workflow-settings" style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
                 <h3>Send Measurements</h3>
                 <p>Click the button below to send your measurements and preferences to our system:</p>
                 <div style="margin-top: 15px;">
@@ -383,57 +371,20 @@
             waist_bellybutton: null
         };
         
-        // Check if we're in an iframe and if camera access is restricted
-        window.addEventListener('DOMContentLoaded', function() {
-            // Check if we're in an iframe
-            if (window.self !== window.top) {
-                console.log('Running in iframe - this may restrict camera access');
-                
-                // Display warning about iframe restrictions
-                const iframeWarning = document.createElement('div');
-                iframeWarning.style.padding = '10px';
-                iframeWarning.style.backgroundColor = '#fff3e0';
-                iframeWarning.style.border = '1px solid #ffe0b2';
-                iframeWarning.style.borderRadius = '4px';
-                iframeWarning.style.marginBottom = '15px';
-                iframeWarning.innerHTML = `
-                    <p><strong>Camera Access Issue:</strong> This tool is embedded in a frame which may restrict camera access.</p>
-                    <p>Try these solutions:</p>
-                    <ol>
-                        <li>Click <a href="#" id="openInNewTab">this link</a> to open in a new tab</li>
-                        <li>Or ask your WordPress admin to add 'allow="camera"' to the iframe tag</li>
-                    </ol>
-                `;
-                
-                document.querySelector('.container').insertBefore(iframeWarning, document.querySelector('.instructions'));
-                
-                // Create a data URL to open in new tab
-                document.getElementById('openInNewTab').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const htmlContent = document.documentElement.outerHTML;
-                    const blob = new Blob([htmlContent], {type: 'text/html'});
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, '_blank');
-                });
-            }
-            
-            // Load data from cookies if available
-            loadFromCookies();
-        });
-        
         // Event listeners
         startBtn.addEventListener('click', startCamera);
         captureBtn.addEventListener('click', startCountdown);
         resetBtn.addEventListener('click', resetCamera);
         exportBtn.addEventListener('click', exportMeasurements);
         
-        // Add integration trigger button listener with correct make.com webhook URL
+        // Add integration trigger button listener
         document.getElementById('triggerWorkflow').addEventListener('click', function() {
+            // Use the Make.com webhook URL
             const webhookUrl = 'https://hook.eu2.make.com/3g4m77jfkblizk9b41dv2bsjhv9d6us7';
-            triggerWorkflow(measurements, webhookUrl);
+            triggerN8NWorkflow(measurements, webhookUrl);
         });
         
-        // Start camera
+        // Start camera - USING THE WORKING APPROACH
         async function startCamera() {
             try {
                 // First, make sure any previous stream is properly stopped
@@ -441,97 +392,32 @@
                     stopCamera();
                 }
                 
-                console.log('Attempting to access camera...');
+                // Use the simple, proven approach that works
+                statusEl.textContent = 'Requesting camera...';
+                console.log('Requesting camera access');
                 
-                // Check if getUserMedia is available
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Camera API not available in this browser or context');
-                }
-                
-                // Add more detailed constraints for better browser compatibility
                 stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: false,
-                    video: { 
-                        facingMode: 'user',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
+                    video: true,
+                    audio: false 
                 });
                 
-                console.log('Camera access granted:', stream);
-                
-                // Double check that we got a valid stream with tracks
-                if (!stream || !stream.getVideoTracks || !stream.getVideoTracks().length) {
-                    throw new Error('No video tracks found in media stream');
-                }
-                
-                // Assign the stream to video element
-                try {
-                    video.srcObject = stream;
-                } catch (e) {
-                    console.error('Error setting srcObject:', e);
-                    // Fallback for older browsers
-                    try {
-                        video.src = URL.createObjectURL(stream);
-                    } catch (e2) {
-                        console.error('Error with createObjectURL fallback:', e2);
-                        throw new Error('Could not connect camera to video element');
-                    }
-                }
+                console.log('Camera access granted');
+                video.srcObject = stream;
                 
                 statusEl.textContent = 'Camera active - Position yourself in frame';
                 startBtn.disabled = true;
                 captureBtn.disabled = false;
                 resetBtn.disabled = false;
                 
-                // Set canvas dimensions to match video when video is ready
+                // Set canvas dimensions to match video
                 video.onloadedmetadata = () => {
-                    console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                 };
-                
-                // Add error handling for video element
-                video.onerror = (e) => {
-                    console.error('Video element error:', e);
-                };
-                
-                // Make sure video plays
-                video.play().catch(e => {
-                    console.error('Error playing video:', e);
-                });
             } catch (err) {
                 console.error('Error accessing camera:', err);
                 statusEl.textContent = 'Failed to access camera: ' + err.message;
                 statusEl.classList.add('error');
-                
-                // Show more detailed error information
-                const errorDetails = document.createElement('div');
-                errorDetails.style.marginTop = '10px';
-                errorDetails.style.padding = '8px';
-                errorDetails.style.backgroundColor = '#ffebee';
-                errorDetails.style.borderRadius = '4px';
-                errorDetails.style.fontSize = '14px';
-                
-                if (err.name === 'NotAllowedError') {
-                    errorDetails.innerHTML = '<strong>Permission denied:</strong> Please allow camera access in your browser settings.';
-                } else if (err.name === 'NotFoundError') {
-                    errorDetails.innerHTML = '<strong>No camera found:</strong> Please make sure your device has a working camera.';
-                } else if (err.name === 'NotReadableError') {
-                    errorDetails.innerHTML = '<strong>Camera in use:</strong> Your camera may be used by another application.';
-                } else if (err.name === 'SecurityError') {
-                    errorDetails.innerHTML = '<strong>Security error:</strong> This site needs to be on HTTPS to access the camera.';
-                } else {
-                    errorDetails.innerHTML = '<strong>Error:</strong> ' + err.message;
-                }
-                
-                const existingError = document.querySelector('.camera-error');
-                if (existingError) {
-                    existingError.remove();
-                }
-                
-                errorDetails.className = 'camera-error';
-                document.querySelector('.video-container').appendChild(errorDetails);
             }
         }
         
@@ -659,6 +545,10 @@
             
             // Simulate a more realistic processing time (3 seconds)
             setTimeout(() => {
+                // Remove processing indicator
+                const processingIndicator = document.getElementById('processingIndicator');
+                if (processingIndicator) processingIndicator.remove();
+                
                 if (photoNum === 1) {
                     // Process front view measurements
                     updateMeasurements({
@@ -816,8 +706,8 @@
             linkElement.click();
         }
         
-        // Function to trigger integration workflow with make.com
-        function triggerWorkflow(data, webhookUrl) {
+        // Function to trigger integration workflow
+        function triggerN8NWorkflow(data, webhookUrl, apiKey = '') {
             // Get user preference data
             const userEmail = document.getElementById('userEmail').value.trim();
             const garmentType = document.getElementById('garmentType').value.trim();
@@ -829,9 +719,6 @@
                 document.getElementById('userEmail').focus();
                 return;
             }
-            
-            // Save user data to cookies
-            saveUserDataToCookies(userEmail, garmentType, occasion);
             
             // Display sending indicator
             const sendingIndicator = document.createElement('div');
@@ -851,42 +738,80 @@
             
             document.querySelector('.workflow-settings').appendChild(sendingIndicator);
             
-            // Add user preferences and timestamp to the data
+            // Create a simplified data object - n8n might have issues with complex nested objects
             const dataToSend = {
-                ...data,
+                id: data.id,
                 userEmail: userEmail,
                 garmentType: garmentType,
                 occasion: occasion,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                measurements: {
+                    bust: data.bust,
+                    waist: data.waist,
+                    hip: data.hip,
+                    shoulder: data.shoulder,
+                    inseam: data.inseam,
+                    arm_length: data.arm_length
+                },
+                allMeasurements: data
             };
             
-            // Send data to make.com webhook
+            console.log("Sending to webhook:", webhookUrl);
+            console.log("Data:", dataToSend);
+            
+            // Try multiple approaches to send data to the webhook
+            
+            // Approach 1: Standard fetch with credentials included
             fetch(webhookUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify(dataToSend)
             })
             .then(response => {
+                console.log("Fetch response:", response);
+                
                 if (response.ok) {
                     // Success
                     sendingIndicator.textContent = 'Data sent successfully!';
                     sendingIndicator.style.backgroundColor = '#c8e6c9';
-                    
-                    // Save measurements to cookies
-                    saveMeasurementsToCookies(data);
-                } else {
-                    // Server error
-                    throw new Error('Server returned status: ' + response.status);
+                    return;
                 }
+                
+                // If standard fetch fails, try alternate approaches
+                console.log("Standard fetch failed, trying alternative");
+                
+                // Approach 2: Using XMLHttpRequest as fallback
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', webhookUrl, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        console.log("XHR Success!");
+                        sendingIndicator.textContent = 'Data sent successfully via alternative method!';
+                        sendingIndicator.style.backgroundColor = '#c8e6c9';
+                    } else {
+                        throw new Error('Both methods failed. Status: ' + xhr.status);
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    throw new Error('Network error with alternative method');
+                };
+                
+                xhr.send(JSON.stringify(dataToSend));
             })
             .catch(error => {
-                // Error
-                sendingIndicator.textContent = 'Error sending data!';
+                console.error("Error details:", error);
+                
+                // Provide detailed error information and alternatives
+                sendingIndicator.textContent = 'Error sending data';
                 sendingIndicator.style.backgroundColor = '#ffcdd2';
                 
-                // Display error details
                 const errorElement = document.createElement('div');
                 errorElement.style.marginTop = '10px';
                 errorElement.style.padding = '8px';
@@ -894,111 +819,19 @@
                 errorElement.style.borderRadius = '4px';
                 errorElement.style.color = '#d32f2f';
                 errorElement.style.fontSize = '14px';
-                errorElement.textContent = 'Error: ' + error.message;
+                errorElement.innerHTML = `
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Please try one of these alternatives:</p>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>Use the "Export as JSON" button and manually send the data</li>
+                        <li>Verify the webhook URL configuration in n8n</li>
+                        <li>Check browser console for detailed error information</li>
+                    </ul>
+                `;
                 
                 sendingIndicator.after(errorElement);
-                
-                console.error('Error sending data:', error);
             });
         }
-        
-        // Save user data to cookies
-        function saveUserDataToCookies(email, garmentType, occasion) {
-            const expiryDate = new Date();
-            expiryDate.setMonth(expiryDate.getMonth() + 3); // 3 months expiry
-            
-            document.cookie = `userEmail=${encodeURIComponent(email)}; expires=${expiryDate.toUTCString()}; path=/`;
-            
-            if (garmentType) {
-                document.cookie = `garmentType=${encodeURIComponent(garmentType)}; expires=${expiryDate.toUTCString()}; path=/`;
-            }
-            
-            if (occasion) {
-                document.cookie = `occasion=${encodeURIComponent(occasion)}; expires=${expiryDate.toUTCString()}; path=/`;
-            }
-            
-            console.log('User data saved to cookies');
-        }
-        
-        // Save measurements to cookies
-        function saveMeasurementsToCookies(data) {
-            // Only save the main measurements
-            const mainMeasurements = {
-                bust: data.bust,
-                waist: data.waist,
-                hip: data.hip,
-                inseam: data.inseam,
-                shoulder: data.shoulder,
-                arm_length: data.arm_length,
-                id: data.id,
-                isMeasured: data.isMeasured
-            };
-            
-            const expiryDate = new Date();
-            expiryDate.setMonth(expiryDate.getMonth() + 3); // 3 months expiry
-            
-            document.cookie = `measurements=${encodeURIComponent(JSON.stringify(mainMeasurements))}; expires=${expiryDate.toUTCString()}; path=/`;
-            
-            console.log('Measurements saved to cookies');
-        }
-        
-        // Load data from cookies
-        function loadFromCookies() {
-            // Helper function to get cookie value
-            function getCookie(name) {
-                const nameEQ = name + "=";
-                const ca = document.cookie.split(';');
-                for(let i = 0; i < ca.length; i++) {
-                    let c = ca[i];
-                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                    if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
-                }
-                return null;
-            }
-            
-            // Load user data
-            const userEmail = getCookie('userEmail');
-            if (userEmail) {
-                document.getElementById('userEmail').value = userEmail;
-            }
-            
-            const garmentType = getCookie('garmentType');
-            if (garmentType) {
-                document.getElementById('garmentType').value = garmentType;
-            }
-            
-            const occasion = getCookie('occasion');
-            if (occasion) {
-                document.getElementById('occasion').value = occasion;
-            }
-            
-            // Load measurements
-            const measurementsCookie = getCookie('measurements');
-            if (measurementsCookie) {
-                try {
-                    const savedMeasurements = JSON.parse(measurementsCookie);
-                    if (savedMeasurements && typeof savedMeasurements === 'object') {
-                        // Apply saved measurements to current measurements
-                        Object.assign(measurements, savedMeasurements);
-                        
-                        // Update UI with loaded measurements
-                        for (const key in savedMeasurements) {
-                            const el = document.getElementById(key);
-                            if (el && savedMeasurements[key] !== null) {
-                                el.textContent = savedMeasurements[key];
-                            }
-                        }
-                        
-                        console.log('Measurements loaded from cookies');
-                    }
-                } catch (e) {
-                    console.error('Error parsing measurements cookie:', e);
-                }
-            }
-        }
-        
-        // Clean up on page unload
-        window.addEventListener('beforeunload', stopCamera);
     </script>
 </body>
 </html>
